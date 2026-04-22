@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Capas A4 · Jurisprudência Esquematizada · Revisáculo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .tweaks-panel {
+    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+    background: #fff; border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    padding: 20px 22px; width: 280px;
+    font-family: 'Inter', sans-serif;
+    border-radius: 2px;
+  }
+  .tweaks-panel h4 {
+    margin: 0 0 16px; font-size: 11px; letter-spacing: 3px;
+    font-family: 'JetBrains Mono', monospace; color: #666;
+    text-transform: uppercase;
+  }
+  .tweaks-panel label {
+    display: block; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #666; margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tweaks-panel input, .tweaks-panel select {
+    width: 100%; padding: 8px 10px; font-size: 14px;
+    border: 1px solid rgba(0,0,0,0.15); border-radius: 2px;
+    font-family: 'Inter', sans-serif; margin-bottom: 14px;
+    box-sizing: border-box;
+  }
+  .tweaks-panel .row { display: flex; gap: 10px; }
+  .tweaks-panel .row > div { flex: 1; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "disciplina": "Direito Constitucional"
+}/*EDITMODE-END*/;
+</script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="covers.jsx"></script>
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  const DISCIPLINAS = [
+    'Direito Constitucional',
+    'Direito Administrativo',
+    'Direito Eleitoral',
+    'Direito Civil',
+    'Direito do Consumidor',
+    'Direito Notarial e Registral',
+    'Direito da Criança e do Adolescente',
+    'Direito Empresarial',
+    'Direito Ambiental',
+    'Direito Processual Civil',
+    'Direito Penal',
+    'Direito Processual Penal',
+    'Direito Penal e Processual Penal Militar',
+    'Direito Tributário',
+    'Direito Previdenciário',
+    'Direito Internacional',
+    'Direito do Trabalho e Processual do Trabalho',
+  ];
+  const ANOS = [];
+
+  const variations = [
+    { id: 'v1', label: '01 · Clássica sóbria',
+      subtitle: 'Logo protagonista, disciplina + ano pareados no rodapé',
+      Component: CoverClassica },
+  ];
+
+  const PREVIEW_SCALE = 0.55;
+  const PREVIEW_W = A4_W * PREVIEW_SCALE;
+  const PREVIEW_H = A4_H * PREVIEW_SCALE;
+
+  function CoverFrame({ Component, screenLabel, disciplina, ano }) {
+    return (
+      <div
+        data-screen-label={screenLabel}
+        style={{ width: PREVIEW_W, height: PREVIEW_H, overflow: 'hidden', position: 'relative' }}
+      >
+        <div style={{
+          width: A4_W, height: A4_H,
+          transform: `scale(${PREVIEW_SCALE})`, transformOrigin: '0 0',
+        }}>
+          <Component disciplina={disciplina} ano={ano} />
+        </div>
+      </div>
+    );
+  }
+
+  function TweaksPanel({ disciplina, onChange, visible }) {
+    if (!visible) return null;
+    return (
+      <div className="tweaks-panel">
+        <h4>Tweaks · Série</h4>
+        <label>Disciplina</label>
+        <select value={disciplina} onChange={e => onChange({ disciplina: e.target.value })}>
+          {DISCIPLINAS.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <div style={{
+          fontSize: 11, color: '#888', lineHeight: 1.5, marginTop: 6,
+        }}>
+          Aplica na capa — troque a disciplina pra ver como o layout se comporta.
+        </div>
+      </div>
+    );
+  }
+
+  function App() {
+    const [disciplina, setDisciplina] = useState(TWEAK_DEFAULTS.disciplina);
+    const [editMode, setEditMode] = useState(false);
+
+    useEffect(() => {
+      const handler = (e) => {
+        if (e.data?.type === '__activate_edit_mode') setEditMode(true);
+        if (e.data?.type === '__deactivate_edit_mode') setEditMode(false);
+      };
+      window.addEventListener('message', handler);
+      window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      return () => window.removeEventListener('message', handler);
+    }, []);
+
+    const updateTweaks = (edits) => {
+      if (edits.disciplina !== undefined) setDisciplina(edits.disciplina);
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    };
+
+    return (
+      <>
+        <DesignCanvas>
+          <div style={{ padding: '0 60px 40px', maxWidth: 1100 }}>
+            <div style={{
+              fontSize: 13, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(60,50,40,0.5)', fontFamily: '"JetBrains Mono", monospace',
+              marginBottom: 10,
+            }}>
+              Revisáculo · Capas de e-book A4 · Série
+            </div>
+            <div style={{
+              fontSize: 44, fontWeight: 700, letterSpacing: -1,
+              color: '#1a1410', fontFamily: '"Oswald", sans-serif',
+              textTransform: 'uppercase', lineHeight: 1,
+            }}>
+              Jurisprudência Esquematizada
+            </div>
+            <div style={{
+              fontSize: 16, color: 'rgba(60,50,40,0.75)', marginTop: 12,
+              maxWidth: 820, lineHeight: 1.55,
+            }}>
+              A capa foi pensada como <strong>sistema serial</strong>: o mesmo layout se repete
+              por disciplina, com <strong>disciplina</strong> como variável tipográfica
+              em destaque. Ative <strong>Tweaks</strong> no topo pra trocar de disciplina.
+            </div>
+            <div style={{
+              marginTop: 16,
+              display: 'inline-flex', gap: 16, alignItems: 'center',
+              fontFamily: '"JetBrains Mono", monospace', fontSize: 12,
+              letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(60,50,40,0.65)',
+              background: 'rgba(63,168,155,0.12)', border: '1px solid rgba(63,168,155,0.35)',
+              padding: '8px 14px',
+            }}>
+              <span>Ativo:</span>
+              <strong style={{ color: '#1a1410' }}>{disciplina}</strong>
+            </div>
+          </div>
+
+          <DCSection
+            title="Capa — 01 Clássica sóbria"
+            subtitle={`A4 vertical (1240×1754 @ 150dpi) · exibindo: ${disciplina}`}
+            gap={48}
+          >
+            {variations.map(v => (
+              <DCArtboard
+                key={v.id}
+                label={v.label + ' — ' + v.subtitle}
+                width={PREVIEW_W}
+                height={PREVIEW_H}
+              >
+                <CoverFrame
+                  Component={v.Component}
+                  screenLabel={v.label}
+                  disciplina={disciplina}
+                />
+              </DCArtboard>
+            ))}
+          </DCSection>
+
+          <div style={{ padding: '0 60px 80px', maxWidth: 820 }}>
+            <div style={{
+              fontSize: 13, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(60,50,40,0.5)', fontFamily: '"JetBrains Mono", monospace',
+              marginBottom: 12,
+            }}>
+              Sobre o sistema
+            </div>
+            <div style={{
+              fontSize: 15, color: 'rgba(60,50,40,0.8)',
+              fontFamily: '"Inter", sans-serif', lineHeight: 1.65,
+            }}>
+              · <strong>Disciplina</strong> é o slot tipográfico — basta trocar nos Tweaks.<br />
+              · Exporto o pacote em PDF pra toda a série quando você mandar.
+            </div>
+          </div>
+        </DesignCanvas>
+        <TweaksPanel
+          disciplina={disciplina}
+          onChange={updateTweaks}
+          visible={editMode}
+        />
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
