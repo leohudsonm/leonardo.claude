@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Capas A4 · Jurisprudência Esquematizada · Revisáculo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: #f0eee9;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Canvas ── */
+  #canvas-viewport {
+    height: 100vh; width: 100vw;
+    overflow: hidden;
+    position: relative;
+    touch-action: none;
+    overscroll-behavior: none;
+    background: #f0eee9;
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 120px 120px;
+  }
+  #canvas-world {
+    position: absolute; top: 0; left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+    padding: 60px 0 80px;
+    min-width: 100%; min-height: 100%;
+    width: max-content;
+  }
+
+  /* ── Section / Artboard ── */
+  .dc-section { margin-bottom: 80px; position: relative; }
+  .dc-section-head { padding: 0 60px 36px; }
+  .dc-section-title {
+    font-size: 22px; font-weight: 600; color: rgba(40,30,20,0.85);
+    letter-spacing: -0.3px; margin-bottom: 4px;
+  }
+  .dc-section-sub { font-size: 14px; color: rgba(60,50,40,0.6); }
+  .dc-section-row {
+    display: flex; gap: 48px; padding: 0 60px;
+    align-items: flex-start; width: max-content;
+  }
+  .dc-artboard { position: relative; flex-shrink: 0; }
+  .dc-artboard-label {
+    position: absolute; bottom: 100%; left: 0; padding-bottom: 8px;
+    font-size: 12px; font-weight: 500; color: rgba(60,50,40,0.7);
+    white-space: nowrap;
+  }
+  .dc-artboard-card {
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    background: #fff;
+  }
+
+  /* ── Page header ── */
+  .page-header { padding: 0 60px 40px; max-width: 1100px; }
+  .page-eyebrow {
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(60,50,40,0.5); font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 10px;
+  }
+  .page-title {
+    font-size: 44px; font-weight: 700; letter-spacing: -1px;
+    color: #1a1410; font-family: 'Oswald', sans-serif;
+    text-transform: uppercase; line-height: 1;
+  }
+  .page-desc {
+    font-size: 16px; color: rgba(60,50,40,0.75); margin-top: 12px;
+    max-width: 820px; line-height: 1.55;
+  }
+  .active-badge {
+    margin-top: 16px; display: inline-flex; gap: 16px; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(60,50,40,0.65);
+    background: rgba(63,168,155,0.12); border: 1px solid rgba(63,168,155,0.35);
+    padding: 8px 14px;
+  }
+  .active-badge strong { color: #1a1410; }
+
+  /* ── Page footer note ── */
+  .page-footer { padding: 0 60px 80px; max-width: 820px; }
+  .page-footer-label {
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(60,50,40,0.5); font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+  .page-footer-body {
+    font-size: 15px; color: rgba(60,50,40,0.8);
+    font-family: 'Inter', sans-serif; line-height: 1.65;
+  }
+
+  /* ── Tweaks panel ── */
+  #tweaks {
+    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+    background: #fff; border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    padding: 20px 22px; width: 280px;
+    font-family: 'Inter', sans-serif;
+    border-radius: 2px;
+  }
+  #tweaks h4 {
+    margin: 0 0 16px; font-size: 11px; letter-spacing: 3px;
+    font-family: 'JetBrains Mono', monospace; color: #666;
+    text-transform: uppercase;
+  }
+  #tweaks label {
+    display: block; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #666; margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #tweaks select {
+    width: 100%; padding: 8px 10px; font-size: 14px;
+    border: 1px solid rgba(0,0,0,0.15); border-radius: 2px;
+    font-family: 'Inter', sans-serif; margin-bottom: 14px;
+    background: #fff; cursor: pointer;
+  }
+  #tweaks .hint {
+    font-size: 11px; color: #888; line-height: 1.5; margin-bottom: 16px;
+  }
+  #tweaks .btn-print {
+    display: block; width: 100%;
+    padding: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: #0A1E2E; color: #EDE6D3; border: none;
+    cursor: pointer; border-radius: 2px;
+    transition: background 0.15s;
+  }
+  #tweaks .btn-print:hover { background: #3FA89B; color: #fff; }
+
+  /* ── Cover (A4 1240×1754) ── */
+  .cover-root {
+    width: 1240px; height: 1754px;
+    background: #0A1E2E;
+    position: relative; overflow: hidden;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Dot grid */
+  .cover-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(237,230,211,0.04) 1px, transparent 0);
+    background-size: 24px 24px;
+    pointer-events: none;
+  }
+
+  /* Outer border */
+  .cover-border {
+    position: absolute; inset: 56px;
+    border: 1px solid rgba(237,230,211,0.18);
+    pointer-events: none;
+  }
+
+  /* Inner layout */
+  .cover-inner {
+    position: absolute; inset: 96px;
+    display: flex; flex-direction: column;
+  }
+
+  /* Logo row */
+  .cover-logo-row {
+    display: flex; justify-content: center;
+  }
+  .cover-logo {
+    height: 80px;
+    display: block; object-fit: contain;
+  }
+
+  /* Centre block */
+  .cover-centre {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .cover-title-block { text-align: center; }
+  .cover-title-line1 {
+    font-family: 'Oswald', sans-serif; font-weight: 700;
+    font-size: 124px; letter-spacing: 1px; line-height: 0.92;
+    color: #EDE6D3; text-transform: uppercase;
+  }
+  .cover-title-line2 {
+    font-family: 'Oswald', sans-serif; font-weight: 300;
+    font-size: 124px; letter-spacing: 1px; line-height: 0.92;
+    color: #3FA89B; text-transform: uppercase; margin-top: 6px;
+  }
+  .cover-subtitle {
+    font-family: 'JetBrains Mono', monospace; font-size: 16px;
+    letter-spacing: 5px; color: #3FA89B; text-transform: uppercase;
+    margin-top: 40px;
+  }
+
+  /* Footer */
+  .cover-footer {
+    padding-top: 28px;
+    border-top: 1px solid rgba(237,230,211,0.18);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+  }
+  .cover-disciplina {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: 82px; color: #EDE6D3; text-transform: uppercase;
+    letter-spacing: 1px; line-height: 1; text-align: center;
+  }
+  .cover-year {
+    font-family: 'Oswald', sans-serif; font-weight: 300;
+    font-size: 52px; color: #3FA89B;
+    letter-spacing: 8px; line-height: 1.2; margin-top: 16px;
+  }
+
+  /* ── Print layout ── */
+  @media print {
+    html, body { background: #fff; }
+    #canvas-viewport, #tweaks { display: none !important; }
+    #print-sheet { display: block !important; }
+  }
+
+  #print-sheet {
+    display: none;
+  }
+  #print-sheet .page {
+    width: 210mm; height: 297mm;
+    overflow: hidden; position: relative;
+    break-after: page; page-break-after: always;
+  }
+  #print-sheet .page:last-child { break-after: auto; page-page-after: auto; }
+  #print-sheet .cover-scale {
+    width: 1240px; height: 1754px;
+    transform-origin: top left;
+    /* 210mm ≈ 793.7px @96dpi; 1240/793.7 ≈ 0.6401 */
+    transform: scale(0.6401);
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ SCREEN VIEW ═══════════════════════════════════ -->
+<div id="canvas-viewport">
+  <div id="canvas-world">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-eyebrow">Revisáculo · Capas de e-book A4 · Série</div>
+      <div class="page-title">Jurisprudência Esquematizada</div>
+      <div class="page-desc">
+        A capa foi pensada como <strong>sistema serial</strong>: o mesmo layout se repete
+        por disciplina, com <strong>disciplina</strong> como variável tipográfica
+        em destaque. Use o painel <strong>Tweaks</strong> para trocar de disciplina.
+      </div>
+      <div class="active-badge">
+        <span>Ativo:</span>
+        <strong id="active-label">Direito Constitucional · 2026</strong>
+      </div>
+    </div>
+
+    <!-- Section -->
+    <div class="dc-section">
+      <div class="dc-section-head">
+        <div class="dc-section-title">Capa — 01 Clássica sóbria</div>
+        <div class="dc-section-sub" id="section-sub">
+          A4 vertical (1240×1754 @ 150dpi) · exibindo: Direito Constitucional
+        </div>
+      </div>
+      <div class="dc-section-row">
+        <div class="dc-artboard">
+          <div class="dc-artboard-label">01 · Clássica sóbria — Logo protagonista, disciplina no rodapé</div>
+          <div class="dc-artboard-card" id="preview-card" style="width:682px;height:964px;">
+            <div id="preview-scale" style="width:1240px;height:1754px;transform:scale(0.55);transform-origin:0 0;">
+              <!-- Cover content injected by JS -->
+              <div class="cover-root" id="cover-v1">
+                <div class="cover-dots"></div>
+                <div class="cover-border"></div>
+                <div class="cover-inner">
+                  <div class="cover-logo-row">
+                    <img class="cover-logo" src="project/assets/logo-horizontal.png" alt="Revisáculo" />
+                  </div>
+                  <div class="cover-centre">
+                    <div class="cover-title-block">
+                      <div class="cover-title-line1">Jurisprudência</div>
+                      <div class="cover-title-line2">Esquematizada</div>
+                      <div class="cover-subtitle">Informativos do STJ e STF</div>
+                    </div>
+                  </div>
+                  <div class="cover-footer">
+                    <div class="cover-disciplina" id="cover-disciplina-text">Direito Constitucional</div>
+                    <div class="cover-year" id="cover-year-text">2026</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <div class="page-footer">
+      <div class="page-footer-label">Sobre o sistema</div>
+      <div class="page-footer-body">
+        · <strong>Disciplina</strong> é o slot tipográfico — basta trocar no painel Tweaks.<br />
+        · Clique em <strong>Exportar PDF</strong> para imprimir a capa da disciplina selecionada.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TWEAKS PANEL ═══════════════════════════════════ -->
+<div id="tweaks">
+  <h4>Tweaks · Série</h4>
+  <label for="sel-disciplina">Disciplina</label>
+  <select id="sel-disciplina">
+    <option>Direito Administrativo</option>
+    <option>Direito Administrativo Militar</option>
+    <option>Direito Ambiental</option>
+    <option>Direito Civil</option>
+    <option>Direito Constitucional</option>
+    <option>Direito da Criança e do Adolescente</option>
+    <option>Direito do Consumidor</option>
+    <option>Direito do Trabalho e Processual do Trabalho</option>
+    <option>Direito econômico</option>
+    <option>Direito Eleitoral</option>
+    <option>Direito Empresarial</option>
+    <option>Direito Financeiro</option>
+    <option>Direito Internacional</option>
+    <option>Direito Notarial e Registral</option>
+    <option>Direito Penal</option>
+    <option>Direito Penal e Processual Penal Militar</option>
+    <option>Direito Previdenciário</option>
+    <option>Direito Processual Civil</option>
+    <option>Direito Processual Penal</option>
+    <option>Direito Tributário</option>
+  </select>
+  <label for="sel-ano">Ano</label>
+  <select id="sel-ano">
+    <option>2026</option>
+    <option>2025</option>
+    <option>2024</option>
+    <option>2023</option>
+    <option>2022</option>
+    <option>2021</option>
+  </select>
+  <div class="hint">Troque disciplina e ano para ver como a capa se comporta.</div>
+  <button class="btn-print" onclick="exportPDF()">↓ Exportar PDF</button>
+</div>
+
+<!-- ═══════════════════════════════════ PRINT SHEET ═══════════════════════════════════ -->
+<div id="print-sheet">
+  <div class="page">
+    <div class="cover-scale">
+      <div class="cover-root">
+        <div class="cover-dots"></div>
+        <div class="cover-border"></div>
+        <div class="cover-inner">
+          <div class="cover-logo-row">
+            <img class="cover-logo" src="project/assets/logo-horizontal.png" alt="Revisáculo" />
+          </div>
+          <div class="cover-centre">
+            <div class="cover-title-block">
+              <div class="cover-title-line1">Jurisprudência</div>
+              <div class="cover-title-line2">Esquematizada</div>
+              <div class="cover-subtitle">Informativos do STJ e STF</div>
+            </div>
+          </div>
+          <div class="cover-footer">
+            <div class="cover-disciplina" id="print-disciplina-text">Direito Constitucional</div>
+            <div class="cover-year" id="print-year-text">2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Tweaks ── */
+  const sel     = document.getElementById('sel-disciplina');
+  const selAno  = document.getElementById('sel-ano');
+  const coverText  = document.getElementById('cover-disciplina-text');
+  const printText  = document.getElementById('print-disciplina-text');
+  const coverYear  = document.getElementById('cover-year-text');
+  const printYear  = document.getElementById('print-year-text');
+  const activeLabel = document.getElementById('active-label');
+  const sectionSub  = document.getElementById('section-sub');
+
+  function disciplinaFontSize(text) {
+    const avail = 1048, factor = 0.47;
+    return Math.min(82, Math.max(32, Math.floor(avail / (text.length * factor))));
+  }
+
+  function applyTweaks() {
+    const d = sel.value;
+    const a = selAno.value;
+    const fs = disciplinaFontSize(d) + 'px';
+    coverText.textContent = d;  coverText.style.fontSize = fs;
+    printText.textContent = d;  printText.style.fontSize = fs;
+    coverYear.textContent = a;
+    printYear.textContent = a;
+    activeLabel.textContent = `${d} · ${a}`;
+    sectionSub.textContent = `A4 vertical (1240×1754 @ 150dpi) · exibindo: ${d} · ${a}`;
+  }
+
+  sel.addEventListener('change', applyTweaks);
+  selAno.addEventListener('change', applyTweaks);
+  applyTweaks(); // init
+
+  function exportPDF() {
+    document.fonts.ready.then(() => {
+      setTimeout(() => window.print(), 200);
+    });
+  }
+
+  /* ── Canvas pan/zoom ── */
+  (function () {
+    const vp = document.getElementById('canvas-viewport');
+    const world = document.getElementById('canvas-world');
+    const tf = { x: 0, y: 0, scale: 1 };
+    const MIN = 0.1, MAX = 8;
+
+    function apply() {
+      world.style.transform = `translate3d(${tf.x}px,${tf.y}px,0) scale(${tf.scale})`;
+    }
+
+    function zoomAt(cx, cy, factor) {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const next = Math.min(MAX, Math.max(MIN, tf.scale * factor));
+      const k = next / tf.scale;
+      tf.x = px - (px - tf.x) * k;
+      tf.y = py - (py - tf.y) * k;
+      tf.scale = next;
+      apply();
+    }
+
+    const isMouseWheel = e =>
+      e.deltaMode !== 0 ||
+      (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+
+    let isGesturing = false;
+    let gsBase = 1;
+
+    vp.addEventListener('wheel', e => {
+      e.preventDefault();
+      if (isGesturing) return;
+      if (e.ctrlKey) {
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        tf.x -= e.deltaX;
+        tf.y -= e.deltaY;
+        apply();
+      }
+    }, { passive: false });
+
+    vp.addEventListener('gesturestart', e => { e.preventDefault(); isGesturing = true; gsBase = tf.scale; }, { passive: false });
+    vp.addEventListener('gesturechange', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.scale); }, { passive: false });
+    vp.addEventListener('gestureend', e => { e.preventDefault(); isGesturing = false; }, { passive: false });
+
+    let drag = null;
+    vp.addEventListener('pointerdown', e => {
+      const onBg = e.target === vp || e.target === world;
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    });
+    vp.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.x += e.clientX - drag.lx;
+      tf.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    });
+    vp.addEventListener('pointerup', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    });
+    vp.addEventListener('pointercancel', e => {
+      if (drag && e.pointerId === drag.id) { drag = null; vp.style.cursor = ''; }
+    });
+  })();
+</script>
+</body>
+</html>
